@@ -1,37 +1,55 @@
 .global main
 .text
 main: 
-    add $2, $0, $0      # init $2
-    add $3, $0, $0      # init $3
-    add $4, $0, $0      # init $4
+    add $2, $0, $0      # init $2 stores which button was pressed 
+    add $3, $0, $0      # init $3 used to check which button 
+    add $4, $0, $0      # init $4 stores the switches 
+    addi $5, $0, 4      # init $5 used to loop through SSD
 
 buttonpress:
-    lw $2, 0x73001($0)                  # has a button been pressed 
-    bnez $2, buttonpress                # if not keep looping until one has been pressed
+    lw $2, 0x73001($0)                  # has a button been pressed stores it in $2
+    beqz $2, buttonpress                # if not keep looping until one has been pressed
 
     sw $2, 0x73001($0)                  # stores the button was pressed
-    sw $4, 0x73000($0)                  #reads the swichs and stores them in $4
+    
+    lw $4, 0x73000($0)                  # reads the swichs and stores them in $4
 
-                #check which button was pressed 
+                    #check which button was pressed 
     seqi $3, $2, 2                      #checks if the middle button was pressed 
     bnez $3, invertswitches             #if it was branches to invert switches
+
+    #could make it if the right and middle button pressed check for multiple of 4 when inverted. 
 
     seqi $3, $2, 4                      # checks if the left button was pressed
     bnez $3, exit                       # if it was branches to exit
 
-    #bnez $2, printswitches              #otherwise branches to printing out the switches normally.  
+    #coud make it if the left and middle button pressed then exit as well. 
 
-printswitches:
+                    #If anything else is pressed (combination) then does the same as if the right button was pressed
+ 
+multiplecheck: 
+    remi $6, $4, 4              # stores the remainder when divided by 4 
+    bnez $6, LEDoff             # if there is a remainder brakes to ledoff 
 
-    #read last 4
-        
+    addi $6, $0, 0xFFFF         # makes all bits on 
+    sw $6, 0x7300A($0)          # turns on all the LEDs
+    j printswitches             # jumps to print the switches 
 
 
+LEDoff:
+    sw $0, 0x7300A($0)          #resets all the LEDs to off
+
+printswitches: 
+    sw $4, 0x73005($5)          #loops through each SSD 
+    divi $4, $4, 0x10           #removes the right 4 bits
+    subi $5, $5, 1              #incrments the counter 
+    bnez $5, printswitches      #checks that 4 things have printed to the SSD
+    j main
 
 invertswitches:
+    xori $4, $4, 0xFFFF         #exclusive or to flip all the switchs
+    j printswitches             #jumps to printswitches to print all the flipped switches
 
+exit:
+    jr $ra                      #exits the code
 
-    
-
-exit: 
-    jr $ra 
