@@ -1,31 +1,35 @@
 .global main
 .text
 main: 
-    sw $ra, 0($sp)      #Store return adress in stack 
-    subui $sp, $sp, 1   # decrement stack pointer
+# use the stack but doesn't seem to work and not sure tutor said to use a empty register instead. 
+    # subui $sp, $sp, 1   # decrement stack pointer
+    # sw $ra, 0($sp)      #Store return adress in stack 
+    add $8, $0, $ra
+   
+    addi $9, $0, 0      # sets the flag to exit   
 
     loop: 
         jal serial_job      #Call q2 serial job
         jal parallel_job    #call q3 parallel job
-        j loop              #jumps back to top of the loop to repeat
-    
+        beqz $9, loop       #jumps back to top of the loop to repeat when doesn't want to exit whole program
+        
+           
     exit: 
-        addui $sp, $sp, 1   #increment stack pointer to find return adress 
-        lw $ra, 0($sp)      #restore return address 
-    
-    return:
-        jr $ra              #return and exit the program
+        
+        # lw $ra, 0($sp)      #restore return address 
+        # addui $sp, $sp, 1   #increment stack pointer to find return adress 
+        jr $8              #return and exit the program
 
     
     
     serial_job:  
-        add $10, $0, $0          # init register 9 to store input. DONT THINK I NEED 
+        add $10, $0, $0          # init register 10 to store input. DONT THINK I NEED 
        
         readserialport:
             lw $11, 0x70003($0)     # Get the first serial port status
             andi $11, $11, 0x1      # Check if the RDR bit is set
             beqz $11, returnserial         # If not, loop out and check parallel
-            lw $10, 0x70001($0)      # Puts the serial port into $9
+            lw $10, 0x70001($0)      # Puts the serial port into $10
 
         checkinput:
             slti $13, $10, 'a'        # Check if the character is less than 'a'
@@ -95,11 +99,12 @@ main:
 
         invertswitches:
             xori $4, $4, 0xFFFF         #exclusive or to flip all the switchs
-            j printswitches             #jumps to printswitches to print all the flipped switches
+            j multiplecheck             #jumps to check if the new value is multiple of 4
 
         exitbutton:
-            bnez $7, returnparallel
-            j exit
+            addi $9, $0, 1
+  
+            
 
         returnparallel:
             jr $ra      #return from parallel job

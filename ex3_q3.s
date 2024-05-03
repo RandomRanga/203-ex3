@@ -48,7 +48,8 @@ printswitches:
 
 invertswitches:
     xori $4, $4, 0xFFFF         #exclusive or to flip all the switchs
-    j printswitches             #jumps to printswitches to print all the flipped switches
+    
+    j multiplecheck             #jumps to multiplecheck to see if the new value is a multiple of 4
 
 exit:
     jr $ra                      #exits the code
